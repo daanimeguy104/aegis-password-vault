@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Aegis Pass.iml" filepath="$PROJECT_DIR$/Aegis Pass.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Aegis Password Vault.iml" filepath="$PROJECT_DIR$/Aegis Password Vault.iml" />
     </modules>
   </component>
 </project>
