@@ -7,5 +7,6 @@ public class DetailViewPanel extends RoundedPanel {
         super(25, new Color(248, 250, 252));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         setPreferredSize(new Dimension(620, 520));
+        setLayout(new BorderLayout());
     }
 }
