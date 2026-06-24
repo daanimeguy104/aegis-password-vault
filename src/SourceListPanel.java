@@ -8,11 +8,12 @@ public class SourceListPanel extends RoundedPanel {
     private JTextField searchBar;
     private DefaultTableModel passwordsModel;
     private JTable passwordVault;
+    private RoundedButton addPassword;
     
     public SourceListPanel() {
         super(25, new Color(248, 250, 252));
-        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        setPreferredSize(new Dimension(250, 520));
+        setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        setPreferredSize(new Dimension(300, 520));
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         
         JLabel findPassword = new JLabel("Find Password", JLabel.LEFT);
@@ -22,14 +23,16 @@ public class SourceListPanel extends RoundedPanel {
         JPanel searchBarHolder = new JPanel(new FlowLayout(FlowLayout.LEFT, 1, 0));
         searchBarHolder.setAlignmentX(Component.LEFT_ALIGNMENT);
         searchBarHolder.setOpaque(false);
-        searchBarHolder.setMaximumSize(new Dimension(230, 30));
+        searchBarHolder.setMaximumSize(new Dimension(270, 30));
         
         JLabel search = new JLabel("Search:", JLabel.LEFT);
         search.setForeground(new Color(30, 41, 59));
         search.setFont(new Font("Sans Serif", Font.BOLD, 16));
         
-        searchBar = new JTextField(10);
-        searchBar.setFont(new Font("Sans Serif", Font.PLAIN, 16));
+        searchBar = new JTextField(14);
+        searchBar.setFont(new Font("Sans Serif", Font.PLAIN, 15));
+        searchBar.setForeground(new Color(30, 41, 59));
+        searchBar.setAlignmentX(Component.LEFT_ALIGNMENT);
         
         searchBarHolder.add(search);
         searchBarHolder.add(searchBar);
@@ -113,7 +116,7 @@ public class SourceListPanel extends RoundedPanel {
                     Graphics2D g2d = (Graphics2D) (g.create());
                     
                     g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2d.setColor(new Color(79, 70, 229));
+                    g2d.setColor(new Color(37, 99, 235));
                     g2d.fillRoundRect(4, 2, getWidth() - 8, getHeight() - 4,
                         12, 12);
                     g2d.dispose();
@@ -126,11 +129,16 @@ public class SourceListPanel extends RoundedPanel {
         JScrollPane scroller = new JScrollPane(passwordVault);
         scroller.setAlignmentX(Component.LEFT_ALIGNMENT);
         scroller.setBorder(BorderFactory.createEmptyBorder());
-        scroller.setMaximumSize(new Dimension(230, 240));
-        scroller.setMinimumSize(new Dimension(230, 240));
-        scroller.setPreferredSize(new Dimension(230, 240));
+        scroller.setMaximumSize(new Dimension(270, 220));
+        scroller.setMinimumSize(new Dimension(270, 220));
+        scroller.setPreferredSize(new Dimension(270, 220));
         scroller.setOpaque(false);
         scroller.getViewport().setOpaque(false);
+        
+        addPassword = new RoundedButton("Create New Vault Entry");
+        addPassword.setBackground(new Color(37, 99, 235));
+        addPassword.setFont(new Font("Sans Serif", Font.BOLD, 13));
+        addPassword.setForeground(Color.WHITE);
         
         passVaultWrapper.add(scroller);
         add(findPassword);
@@ -140,7 +148,8 @@ public class SourceListPanel extends RoundedPanel {
         add(passVaultLabel);
         add(Box.createVerticalStrut(5));
         add(passVaultWrapper);
+        add(Box.createVerticalStrut(15));
+        add(addPassword);
         add(Box.createVerticalGlue());
-        
     }
 }

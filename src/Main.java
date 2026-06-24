@@ -9,7 +9,7 @@ public class Main {
     
     public void run() {
         JFrame frame = new JFrame();
-        frame.setSize(900, 600);
+        frame.setSize(800, 600);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.add(new VaultConsole());
         frame.setResizable(false);
