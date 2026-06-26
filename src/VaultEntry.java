@@ -1,30 +1,48 @@
 public class VaultEntry {
     
-    private String siteName;
-    private String url;
-    private String username;
-    private String password;
+    private char[] siteName;
+    private char[] username;
+    private char[] password;
+    private char[] url;
     
-    public VaultEntry(String siteIn, String urlIn, String userIn, String passIn) {
+    public VaultEntry(char[] siteIn, char[] userIn, char[] passIn, char[] urlIn) {
         siteName = siteIn;
-        url = urlIn;
         username = userIn;
         password = passIn;
+        url = urlIn;
     }
     
-    public String getSite() {
+    public char[] getSite() {
         return siteName;
     }
     
-    public String getUrl() {
-        return url;
-    }
-    
-    public String getUsername() {
+    public char[] getUsername() {
         return username;
     }
     
-    public String getPassword() {
+    public char[] getPassword() {
         return password;
+    }
+    
+    public char[] getUrl() {
+        return url;
+    }
+    
+    public void wipe() {
+        for(int i = 0; i < siteName.length; i++) {
+            siteName[i] = '\0';
+        }
+        
+        for(int i = 0; i < username.length; i++) {
+            username[i] = '\0';
+        }
+        
+        for(int i = 0; i < password.length; i++) {
+            password[i] = '\0';
+        }
+        
+        for(int i = 0; i < url.length; i++) {
+            url[i] = '\0';
+        }
     }
 }

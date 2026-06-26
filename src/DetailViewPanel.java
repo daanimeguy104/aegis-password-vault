@@ -1,7 +1,19 @@
     import javax.swing.*;
+    import javax.swing.text.BadLocationException;
+    import javax.swing.text.Document;
+    import javax.swing.text.Segment;
     import java.awt.*;
+    import java.awt.event.*;
     
     public class DetailViewPanel extends RoundedPanel {
+        
+        private enum State {
+            VIEW, ADD, EDIT;
+        }
+        
+        private SourceListPanel sourceLst;
+        private State currState;
+        private Vault passVault;
         
         private JLabel headerLabel;
         private JTextField siteTF;
@@ -9,9 +21,10 @@
         private JTextField userTF;
         private JPasswordField passTF;
         private JCheckBox showPassCB;
+        
         private RoundedButton edit;
         private RoundedButton delete;
-        private RoundedButton save;
+        private RoundedButton confirm;
         private RoundedButton cancel;
         
         public DetailViewPanel() {
@@ -19,6 +32,8 @@
             setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
             setPreferredSize(new Dimension(470, 520));
             setLayout(new BorderLayout(20, 20));
+            
+            currState = State.VIEW;
             
             headerLabel = new JLabel("Vault Entry Details");
             headerLabel.setFont(new Font("Sans Serif", Font.BOLD, 22));
@@ -38,6 +53,7 @@
             siteTF.setForeground(new Color(30, 41, 59));
             siteTF.setMaximumSize(new Dimension(440, 35));
             siteTF.setAlignmentX(Component.LEFT_ALIGNMENT);
+            siteTF.setEditable(false);
             
             JLabel userLabel = new JLabel("Username:", JLabel.LEFT);
             userLabel.setFont(new Font("Sans Serif", Font.BOLD, 17));
@@ -49,6 +65,7 @@
             userTF.setForeground(new Color(30, 41, 59));
             userTF.setMaximumSize(new Dimension(440, 35));
             userTF.setAlignmentX(Component.LEFT_ALIGNMENT);
+            userTF.setEditable(false);
             
             JLabel passLabel = new JLabel("Password:", JLabel.LEFT);
             passLabel.setFont(new Font("Sans Serif", Font.BOLD, 17));
@@ -61,6 +78,7 @@
             passTF.setMaximumSize(new Dimension(440, 35));
             passTF.setEchoChar('*');
             passTF.setAlignmentX(Component.LEFT_ALIGNMENT);
+            passTF.setEditable(false);
             
             showPassCB = new JCheckBox("Show Password");
             showPassCB.setFont(new Font("Sans Serif", Font.BOLD, 13));
@@ -76,6 +94,7 @@
             urlTF.setForeground(new Color(30, 41, 59));
             urlTF.setMaximumSize(new Dimension(440, 35));
             urlTF.setAlignmentX(Component.LEFT_ALIGNMENT);
+            urlTF.setEditable(false);
             
             formPanel.add(siteLabel);
             formPanel.add(Box.createVerticalStrut(3));
@@ -112,6 +131,7 @@
             edit.setForeground(Color.WHITE);
             edit.setFont(new Font("Sans Serif", Font.BOLD, 14));
             edit.setPreferredSize(new Dimension(200, 35));
+            edit.addActionListener(new EditMode());
             
             delete = new RoundedButton("Delete Selected Entry");
             delete.setBackground(new Color(220, 53, 69));
@@ -126,19 +146,20 @@
             changeMode.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
             changeMode.setOpaque(false);
             
-            save = new RoundedButton("Save Entry");
-            save.setBackground(new Color(40, 190, 69));
-            save.setForeground(Color.WHITE);
-            save.setFont(new Font("Sans Serif", Font.BOLD, 14));
-            save.setPreferredSize(new Dimension(200, 35));
+            confirm = new RoundedButton("Save Changes");
+            confirm.setBackground(new Color(40, 190, 69));
+            confirm.setForeground(Color.WHITE);
+            confirm.setFont(new Font("Sans Serif", Font.BOLD, 14));
+            confirm.setPreferredSize(new Dimension(200, 35));
             
             cancel = new RoundedButton("Cancel");
             cancel.setBackground(new Color(71, 85, 105));
             cancel.setForeground(Color.WHITE);
             cancel.setFont(new Font("Sans Serif", Font.BOLD, 14));
             cancel.setPreferredSize(new Dimension(200, 35));
+            cancel.addActionListener(new CancelAction());
             
-            changeMode.add(save);
+            changeMode.add(confirm);
             changeMode.add(cancel);
             
             buttonPanel.add(viewMode, "View");
@@ -147,5 +168,101 @@
             add(headerLabel, BorderLayout.NORTH);
             add(formPanel, BorderLayout.CENTER);
             add(buttonPanel, BorderLayout.SOUTH);
+            
+            processState();
+        }
+        
+        public void setState(String stateIn) {
+            currState = State.valueOf(stateIn.toUpperCase());
+        }
+        
+        public void setFields(SourceListPanel slp, Vault vaultIn) {
+            sourceLst = slp;
+            passVault = vaultIn;
+        }
+        
+        class EditMode implements ActionListener {
+            public void actionPerformed(ActionEvent evt) {
+                currState = State.EDIT;
+                processState();
+            }
+        }
+        
+        class CancelAction implements ActionListener {
+            public void actionPerformed(ActionEvent evt) {
+                currState = State.VIEW;
+                processState();
+                clear();
+            }
+        }
+        
+        class AddEntry implements ActionListener {
+            public void actionPerformed(ActionEvent evt) {
+            
+            }
+        }
+        
+        public void processState() {
+            Container buttonPanel = (Container)(getComponent(2));
+            CardLayout buttonCards = (CardLayout)(buttonPanel.getLayout());
+            
+            if(currState == State.VIEW) {
+                changeTFAccessabilty(false);
+                headerLabel.setText("Vault Entry Details");
+                buttonCards.show(buttonPanel, "View");
+            } else if(currState == State.ADD) {
+                changeTFAccessabilty(true);
+                confirm.setText("Add Entry");
+                headerLabel.setText("New Vault Entry");
+                buttonCards.show(buttonPanel, "Change");
+            } else if(currState == State.EDIT) {
+                changeTFAccessabilty(true);
+                confirm.setText("Save Changes");
+                headerLabel.setText("Edit Selected Entry");
+                buttonCards.show(buttonPanel, "Change");
+            }
+        }
+        
+        public void changeTFAccessabilty(boolean isAccessible) {
+            siteTF.setEditable(isAccessible);
+            userTF.setEditable(isAccessible);
+            passTF.setEditable(isAccessible);
+            urlTF.setEditable(isAccessible);
+        }
+        
+        public void clear() {
+            siteTF.setText("");
+            userTF.setText("");
+            passTF.setText("");
+            urlTF.setText("");
+            showPassCB.setSelected(false);
+        }
+        
+        public char[] getText(JTextField field) {
+            Document doc = field.getDocument();
+            char[] text = new char[doc.getLength()];
+            
+            try {
+                doc.getText(0, doc.getLength(), new Segment(text, 0,
+                    doc.getLength()));
+            } catch(BadLocationException e) {
+                return new char[0];
+            }
+            
+            return text;
+        }
+        
+        public boolean isOnlySpace(char[] toCheck) {
+            if(toCheck.length == 0 || toCheck == null) {
+                return true;
+            }
+            
+            for(int i = 0; i < toCheck.length; i++) {
+                if(Character.isWhitespace(toCheck[i])) {
+                    return true;
+                }
+            }
+            
+            return false;
         }
     }

@@ -1,9 +1,12 @@
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.table.*;
 import java.awt.*;
+import java.awt.event.*;
 
 public class SourceListPanel extends RoundedPanel {
+    
+    private DetailViewPanel detailVw;
+    private Vault passVault;
     
     private JTextField searchBar;
     private DefaultTableModel passwordsModel;
@@ -13,12 +16,12 @@ public class SourceListPanel extends RoundedPanel {
     public SourceListPanel() {
         super(25, new Color(248, 250, 252));
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        setPreferredSize(new Dimension(300, 520));
+        setPreferredSize(new Dimension(400, 520));
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         
-        JLabel findPassword = new JLabel("Find Password", JLabel.LEFT);
+        JLabel findPassword = new JLabel("Locate Vault Entry", JLabel.LEFT);
         findPassword.setForeground(new Color(30, 41, 59));
-        findPassword.setFont(new Font("Sans Serif", Font.BOLD, 18));
+        findPassword.setFont(new Font("Sans Serif", Font.BOLD, 22));
         
         JPanel searchBarHolder = new JPanel(new FlowLayout(FlowLayout.LEFT, 1, 0));
         searchBarHolder.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -45,32 +48,31 @@ public class SourceListPanel extends RoundedPanel {
         passVaultWrapper.setOpaque(false);
         passVaultWrapper.setAlignmentX(Component.LEFT_ALIGNMENT);
         
-        String[] columnName = {"Site Name"};
-        String[][] test = {
-            {"Github"},
-            {"Google"},
-            {"Netflix"},
-            {"Steam"},
-            {"Epic Games"},
-            {"Amazon"},
-            {"Target"},
-            {"Github"},
-            {"Google"},
-            {"Netflix"},
-            {"Steam"},
-            {"Epic Games"},
-            {"Amazon"},
-            {"Target"}
-        };
+        String[] columnName = {"Site Name", "Username"};
+        /* String[][] test = {
+            {"GitHub", "DevMiles99"},
+            {"Google", "personal.miles@gmail.com"},
+            {"Netflix", "miles.family@gmail.com"},
+            {"Steam", "GamerMilesX"},
+            {"Epic Games", "UnrealMiles"},
+            {"Amazon", "+15555550199"},
+            {"Target", "miles_shopper"},
+            {"GitHub", "MilesCodeWork"},
+            {"Google", "miles.work@techcorp.com"},
+            {"Netflix", "miles.dorm@university.edu"},
+            {"Steam", "SpeedRunner99"},
+            {"Epic Games", "FortniteFanatic"},
+            {"Amazon", "miles.prime@gmail.com"},
+            {"Target", "delivery_miles"}
+        }; */
         
-        passwordsModel = new DefaultTableModel(test, columnName) {
+        passwordsModel = new DefaultTableModel(/*test,*/ columnName, 0) {
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
         
         passwordVault = new JTable(passwordsModel);
-        passwordVault.setTableHeader(null);
         passwordVault.setShowGrid(true);
         passwordVault.setShowVerticalLines(false);
         passwordVault.setGridColor(new Color(226, 232, 240));
@@ -79,6 +81,15 @@ public class SourceListPanel extends RoundedPanel {
         passwordVault.setSelectionBackground(new Color(0, 0, 0, 0));
         passwordVault.setFillsViewportHeight(true);
         passwordVault.setOpaque(false);
+        passwordVault.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        passwordVault.getTableHeader().setFont(new Font("Sans Serif", Font.BOLD, 14));
+        passwordVault.getTableHeader().setBackground(getBackground());
+        passwordVault.getTableHeader().setForeground(new Color(30, 41, 59));
+        passwordVault.getTableHeader().setBorder(BorderFactory.createEmptyBorder());
+        passwordVault.getTableHeader().setReorderingAllowed(false);
+        passwordVault.getTableHeader().setResizingAllowed(false);
+        passwordVault.getColumnModel().getColumn(0).setMaxWidth(120);
+        passwordVault.getColumnModel().getColumn(0).setMinWidth(120);
         
         passwordVault.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             
@@ -129,9 +140,9 @@ public class SourceListPanel extends RoundedPanel {
         JScrollPane scroller = new JScrollPane(passwordVault);
         scroller.setAlignmentX(Component.LEFT_ALIGNMENT);
         scroller.setBorder(BorderFactory.createEmptyBorder());
-        scroller.setMaximumSize(new Dimension(270, 220));
-        scroller.setMinimumSize(new Dimension(270, 220));
-        scroller.setPreferredSize(new Dimension(270, 220));
+        scroller.setMaximumSize(new Dimension(370, 220));
+        scroller.setMinimumSize(new Dimension(370, 220));
+        scroller.setPreferredSize(new Dimension(370, 220));
         scroller.setOpaque(false);
         scroller.getViewport().setOpaque(false);
         
@@ -139,6 +150,7 @@ public class SourceListPanel extends RoundedPanel {
         addPassword.setBackground(new Color(37, 99, 235));
         addPassword.setFont(new Font("Sans Serif", Font.BOLD, 13));
         addPassword.setForeground(Color.WHITE);
+        addPassword.addActionListener(new AddMode());
         
         passVaultWrapper.add(scroller);
         add(findPassword);
@@ -146,10 +158,23 @@ public class SourceListPanel extends RoundedPanel {
         add(searchBarHolder);
         add(Box.createVerticalStrut(40));
         add(passVaultLabel);
-        add(Box.createVerticalStrut(5));
+        add(Box.createVerticalStrut(10));
         add(passVaultWrapper);
         add(Box.createVerticalStrut(15));
         add(addPassword);
         add(Box.createVerticalGlue());
+    }
+    
+    public void setFields(DetailViewPanel dvp, Vault vaultIn) {
+        detailVw = dvp;
+        passVault = vaultIn;
+    }
+    
+    class AddMode implements ActionListener {
+        public void actionPerformed(ActionEvent evt) {
+            detailVw.setState("Add");
+            detailVw.processState();
+            detailVw.clear();
+        }
     }
 }

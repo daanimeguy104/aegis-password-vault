@@ -22,8 +22,15 @@ public class VaultConsole extends JPanel {
         
         titleHolder.add(title);
         
+        Vault passVault = new Vault();
+        SourceListPanel slp = new SourceListPanel();
+        DetailViewPanel dvp = new DetailViewPanel();
+        
+        slp.setFields(dvp, passVault);
+        dvp.setFields(slp, passVault);
+        
         add(titleHolder, BorderLayout.NORTH);
-        add(new SourceListPanel(), BorderLayout.WEST);
-        add(new DetailViewPanel(), BorderLayout.EAST);
+        add(slp, BorderLayout.WEST);
+        add(dvp, BorderLayout.EAST);
     }
 }
