@@ -20,7 +20,7 @@ public class Vault {
     
     public void updateEntry(int index, char[] site, char[] usernm, char[] passwrd, char[] url) {
         VaultEntry changed = new VaultEntry(site, usernm, passwrd, url);
-        vaultEntries.set(index, changed);
+        vaultEntries.set(index, changed).wipe();
     }
     
     public VaultEntry getEntry(int index) {
@@ -31,5 +31,9 @@ public class Vault {
         for(int i = 0; i < vaultEntries.size(); i++) {
             vaultEntries.get(i).wipe();
         }
+    }
+    
+    public String toString() {
+        return vaultEntries.toString();
     }
 }

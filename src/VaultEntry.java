@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 public class VaultEntry {
     
     private char[] siteName;
@@ -6,10 +8,10 @@ public class VaultEntry {
     private char[] url;
     
     public VaultEntry(char[] siteIn, char[] userIn, char[] passIn, char[] urlIn) {
-        siteName = siteIn;
-        username = userIn;
-        password = passIn;
-        url = urlIn;
+        siteName = siteIn.clone();
+        username = userIn.clone();
+        password = passIn.clone();
+        url = urlIn.clone();
     }
     
     public char[] getSite() {
@@ -44,5 +46,10 @@ public class VaultEntry {
         for(int i = 0; i < url.length; i++) {
             url[i] = '\0';
         }
+    }
+    
+    public String toString() {
+        return Arrays.toString(siteName) + "\n" + Arrays.toString(username) + "\n"
+            + Arrays.toString(password) + "\n" + Arrays.toString(url);
     }
 }

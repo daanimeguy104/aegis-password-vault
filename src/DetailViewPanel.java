@@ -1,25 +1,20 @@
     import javax.swing.*;
-    import javax.swing.text.BadLocationException;
-    import javax.swing.text.Document;
-    import javax.swing.text.Segment;
+    import javax.swing.table.DefaultTableModel;
     import java.awt.*;
     import java.awt.event.*;
+    import java.util.Arrays;
     
     public class DetailViewPanel extends RoundedPanel {
-        
-        private enum State {
-            VIEW, ADD, EDIT;
-        }
         
         private SourceListPanel sourceLst;
         private State currState;
         private Vault passVault;
         
         private JLabel headerLabel;
-        private JTextField siteTF;
-        private JTextField urlTF;
-        private JTextField userTF;
-        private JPasswordField passTF;
+        private SecurePasswordField siteTF;
+        private SecurePasswordField urlTF;
+        private SecurePasswordField userTF;
+        private SecurePasswordField passTF;
         private JCheckBox showPassCB;
         
         private RoundedButton edit;
@@ -48,7 +43,8 @@
             siteLabel.setFont(new Font("Sans Serif", Font.BOLD, 17));
             siteLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
             
-            siteTF = new JTextField();
+            siteTF = new SecurePasswordField();
+            siteTF.setEchoChar((char)(0));
             siteTF.setFont(new Font("Sans Serif", Font.PLAIN, 17));
             siteTF.setForeground(new Color(30, 41, 59));
             siteTF.setMaximumSize(new Dimension(440, 35));
@@ -60,7 +56,8 @@
             userLabel.setForeground(new Color(30, 41, 59));
             userLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
             
-            userTF = new JTextField();
+            userTF = new SecurePasswordField();
+            userTF.setEchoChar((char)(0));
             userTF.setFont(new Font("Sans Serif", Font.PLAIN, 17));
             userTF.setForeground(new Color(30, 41, 59));
             userTF.setMaximumSize(new Dimension(440, 35));
@@ -72,24 +69,26 @@
             passLabel.setForeground(new Color(30, 41, 59));
             passLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
             
-            passTF = new JPasswordField();
+            passTF = new SecurePasswordField();
+            passTF.setEchoChar('✲');
             passTF.setFont(new Font("Sans Serif", Font.PLAIN, 17));
             passTF.setForeground(new Color(30, 41, 59));
             passTF.setMaximumSize(new Dimension(440, 35));
-            passTF.setEchoChar('*');
             passTF.setAlignmentX(Component.LEFT_ALIGNMENT);
             passTF.setEditable(false);
             
             showPassCB = new JCheckBox("Show Password");
             showPassCB.setFont(new Font("Sans Serif", Font.BOLD, 13));
             showPassCB.setAlignmentX(Component.LEFT_ALIGNMENT);
+            showPassCB.addActionListener(new ShowPassword());
             
             JLabel urlLabel = new JLabel("Site Url:", JLabel.LEFT);
             urlLabel.setForeground(new Color(30, 41, 59));
             urlLabel.setFont(new Font("Sans Serif", Font.BOLD, 17));
             urlLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
             
-            urlTF = new JTextField();
+            urlTF = new SecurePasswordField();
+            urlTF.setEchoChar((char)(0));
             urlTF.setFont(new Font("Sans Serif", Font.PLAIN, 17));
             urlTF.setForeground(new Color(30, 41, 59));
             urlTF.setMaximumSize(new Dimension(440, 35));
@@ -151,6 +150,7 @@
             confirm.setForeground(Color.WHITE);
             confirm.setFont(new Font("Sans Serif", Font.BOLD, 14));
             confirm.setPreferredSize(new Dimension(200, 35));
+            confirm.addActionListener(new ConfirmAction());
             
             cancel = new RoundedButton("Cancel");
             cancel.setBackground(new Color(71, 85, 105));
@@ -172,8 +172,13 @@
             processState();
         }
         
-        public void setState(String stateIn) {
-            currState = State.valueOf(stateIn.toUpperCase());
+        public void setState(State stateIn) {
+            currState = stateIn;
+            processState();
+        }
+        
+        public State getState() {
+            return currState;
         }
         
         public void setFields(SourceListPanel slp, Vault vaultIn) {
@@ -185,6 +190,19 @@
             public void actionPerformed(ActionEvent evt) {
                 currState = State.EDIT;
                 processState();
+                
+                int currRow = sourceLst.getPasswordTable().getSelectedRow();
+                
+                if(currRow == -1) {
+                    JOptionPane.showMessageDialog(DetailViewPanel.this,
+                        "Please select a row.", "No Row Selected",
+                        JOptionPane.PLAIN_MESSAGE, null);
+                    return;
+                }
+                
+                currRow = sourceLst.getPasswordTable().convertRowIndexToModel(currRow);
+                VaultEntry currEntry = passVault.getEntry(currRow);
+                populateTextFields(currEntry);
             }
         }
         
@@ -192,13 +210,59 @@
             public void actionPerformed(ActionEvent evt) {
                 currState = State.VIEW;
                 processState();
-                clear();
+                sourceLst.showEntry();
             }
         }
         
-        class AddEntry implements ActionListener {
+        class ConfirmAction implements ActionListener {
             public void actionPerformed(ActionEvent evt) {
-            
+                char[] site = siteTF.getPassword();
+                char[] username = userTF.getPassword();
+                char[] password = passTF.getPassword();
+                char[] url = urlTF.getPassword();
+                
+                if(isOnlySpace(site) || isOnlySpace(username) || isOnlySpace(password) ||
+                    isOnlySpace(url)) {
+                    
+                    JOptionPane.showMessageDialog(DetailViewPanel.this,
+                        "One or more input fields are empty.", "Missing Input",
+                        JOptionPane.PLAIN_MESSAGE, null);
+                    return;
+                }
+                
+                if(currState == State.ADD) {
+                    passVault.addEntry(site, username, password, url);
+                    
+                    DefaultTableModel passModel = sourceLst.getTableModel();
+                    passModel.addRow(new Object[]{site.clone(), username.clone()});
+                } else if(currState == State.EDIT) {
+                    int currRow = sourceLst.getPasswordTable().getSelectedRow();
+                    passVault.updateEntry(currRow, site, username, password, url);
+                    
+                    DefaultTableModel passModel = sourceLst.getTableModel();
+                    passModel.setValueAt(site.clone(), currRow, 0);
+                    passModel.setValueAt(username.clone(), currRow, 1);
+                }
+                
+                Arrays.fill(site, '\0');
+                Arrays.fill(username, '\0');
+                Arrays.fill(password,'\0');
+                Arrays.fill(url, '\0');
+                
+                clear();
+                
+                currState = State.VIEW;
+                processState();
+            }
+        }
+        
+        class ShowPassword implements ActionListener {
+            public void actionPerformed(ActionEvent evt) {
+                if(showPassCB.isSelected()) {
+                    passTF.setEchoChar((char)(0));
+                } else {
+                    passTF.setEchoChar('✲');
+                }
             }
         }
         
@@ -207,23 +271,23 @@
             CardLayout buttonCards = (CardLayout)(buttonPanel.getLayout());
             
             if(currState == State.VIEW) {
-                changeTFAccessabilty(false);
+                setTFAccessabilty(false);
                 headerLabel.setText("Vault Entry Details");
                 buttonCards.show(buttonPanel, "View");
             } else if(currState == State.ADD) {
-                changeTFAccessabilty(true);
+                setTFAccessabilty(true);
                 confirm.setText("Add Entry");
                 headerLabel.setText("New Vault Entry");
                 buttonCards.show(buttonPanel, "Change");
             } else if(currState == State.EDIT) {
-                changeTFAccessabilty(true);
+                setTFAccessabilty(true);
                 confirm.setText("Save Changes");
                 headerLabel.setText("Edit Selected Entry");
                 buttonCards.show(buttonPanel, "Change");
             }
         }
         
-        public void changeTFAccessabilty(boolean isAccessible) {
+        public void setTFAccessabilty(boolean isAccessible) {
             siteTF.setEditable(isAccessible);
             userTF.setEditable(isAccessible);
             passTF.setEditable(isAccessible);
@@ -231,25 +295,11 @@
         }
         
         public void clear() {
-            siteTF.setText("");
-            userTF.setText("");
-            passTF.setText("");
-            urlTF.setText("");
+            siteTF.clearSecurely();
+            userTF.clearSecurely();
+            passTF.clearSecurely();
+            urlTF.clearSecurely();
             showPassCB.setSelected(false);
-        }
-        
-        public char[] getText(JTextField field) {
-            Document doc = field.getDocument();
-            char[] text = new char[doc.getLength()];
-            
-            try {
-                doc.getText(0, doc.getLength(), new Segment(text, 0,
-                    doc.getLength()));
-            } catch(BadLocationException e) {
-                return new char[0];
-            }
-            
-            return text;
         }
         
         public boolean isOnlySpace(char[] toCheck) {
@@ -258,11 +308,27 @@
             }
             
             for(int i = 0; i < toCheck.length; i++) {
-                if(Character.isWhitespace(toCheck[i])) {
-                    return true;
+                if(!Character.isWhitespace(toCheck[i])) {
+                    return false;
                 }
             }
             
-            return false;
+            return true;
         }
+        
+        public void populateTextFields(VaultEntry currEntry) {
+            if(currState == State.VIEW) {
+                setTFAccessabilty(true);
+            }
+            
+            siteTF.setTextChars(currEntry.getSite());
+            userTF.setTextChars(currEntry.getUsername());
+            passTF.setTextChars(currEntry.getPassword());
+            urlTF.setTextChars(currEntry.getUrl());
+            
+            if(currState == State.VIEW) {
+                setTFAccessabilty(false);
+            }
+        }
+        
     }

@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.event.*;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -49,30 +50,15 @@ public class SourceListPanel extends RoundedPanel {
         passVaultWrapper.setAlignmentX(Component.LEFT_ALIGNMENT);
         
         String[] columnName = {"Site Name", "Username"};
-        /* String[][] test = {
-            {"GitHub", "DevMiles99"},
-            {"Google", "personal.miles@gmail.com"},
-            {"Netflix", "miles.family@gmail.com"},
-            {"Steam", "GamerMilesX"},
-            {"Epic Games", "UnrealMiles"},
-            {"Amazon", "+15555550199"},
-            {"Target", "miles_shopper"},
-            {"GitHub", "MilesCodeWork"},
-            {"Google", "miles.work@techcorp.com"},
-            {"Netflix", "miles.dorm@university.edu"},
-            {"Steam", "SpeedRunner99"},
-            {"Epic Games", "FortniteFanatic"},
-            {"Amazon", "miles.prime@gmail.com"},
-            {"Target", "delivery_miles"}
-        }; */
         
-        passwordsModel = new DefaultTableModel(/*test,*/ columnName, 0) {
+        passwordsModel = new DefaultTableModel(columnName, 0) {
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
         
         passwordVault = new JTable(passwordsModel);
+        passwordVault.getSelectionModel().addListSelectionListener(new SelectedRow());
         passwordVault.setShowGrid(true);
         passwordVault.setShowVerticalLines(false);
         passwordVault.setGridColor(new Color(226, 232, 240));
@@ -94,14 +80,16 @@ public class SourceListPanel extends RoundedPanel {
         passwordVault.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             
             private boolean isRowSelected;
+            private char[] cellVal;
             
             public Component getTableCellRendererComponent(JTable table,
                 Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 
                 isRowSelected = isSelected;
                 
-                
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setText("");
+                cellVal =  (char[])(value);
                 
                 setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 0));
                 setFont(new Font("Sans Serif", Font.PLAIN, 14));
@@ -123,17 +111,26 @@ public class SourceListPanel extends RoundedPanel {
             }
             
             protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) (g.create());
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
                 if(isRowSelected) {
-                    Graphics2D g2d = (Graphics2D) (g.create());
-                    
-                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     g2d.setColor(new Color(37, 99, 235));
                     g2d.fillRoundRect(4, 2, getWidth() - 8, getHeight() - 4,
                         12, 12);
-                    g2d.dispose();
                 }
                 
                 super.paintComponent(g);
+                
+                g2d.setColor(getForeground());
+                g2d.setFont(getFont());
+                
+                FontMetrics fm = g2d.getFontMetrics();
+                int x = 15;
+                int y = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+                
+                g2d.drawChars(cellVal, 0, cellVal.length, x, y);
+                g2d.dispose();
             }
         });
         
@@ -172,9 +169,38 @@ public class SourceListPanel extends RoundedPanel {
     
     class AddMode implements ActionListener {
         public void actionPerformed(ActionEvent evt) {
-            detailVw.setState("Add");
+            detailVw.setState(State.ADD);
             detailVw.processState();
             detailVw.clear();
+        }
+    }
+    
+    public DefaultTableModel getTableModel() {
+        return passwordsModel;
+    }
+    
+    public JTable getPasswordTable() {
+        return passwordVault;
+    }
+    
+    class SelectedRow implements ListSelectionListener {
+        
+        public void valueChanged(ListSelectionEvent evt) {
+            if(!evt.getValueIsAdjusting()) {
+                showEntry();
+            }
+        }
+    }
+    
+    public void showEntry() {
+        int currRow = passwordVault.getSelectedRow();
+        
+        if(currRow != -1 && detailVw.getState() != State.ADD) {
+            currRow = passwordVault.convertRowIndexToModel(currRow);
+            
+            VaultEntry currEntry = passVault.getEntry(currRow);
+            detailVw.processState();
+            detailVw.populateTextFields(currEntry);
         }
     }
 }
