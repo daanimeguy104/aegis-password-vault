@@ -48,8 +48,8 @@ public class VaultEntry {
         }
     }
     
-    public String toString() {
+     /* public String toString() {
         return Arrays.toString(siteName) + "\n" + Arrays.toString(username) + "\n"
             + Arrays.toString(password) + "\n" + Arrays.toString(url);
-    }
+    } */
 }

@@ -3,15 +3,17 @@ import javax.swing.event.*;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.Arrays;
 
 public class SourceListPanel extends RoundedPanel {
     
     private DetailViewPanel detailVw;
     private Vault passVault;
     
-    private JTextField searchBar;
+    private JPasswordField searchBar;
     private DefaultTableModel passwordsModel;
     private JTable passwordVault;
+    private TableRowSorter<DefaultTableModel> vaultSorter;
     private RoundedButton addPassword;
     
     public SourceListPanel() {
@@ -33,10 +35,13 @@ public class SourceListPanel extends RoundedPanel {
         search.setForeground(new Color(30, 41, 59));
         search.setFont(new Font("Sans Serif", Font.BOLD, 16));
         
-        searchBar = new JTextField(14);
+        searchBar = new JPasswordField(14);
+        searchBar.setEchoChar((char)(0));
+        searchBar.putClientProperty("JPasswordField.cutCopyAllowed", true);
         searchBar.setFont(new Font("Sans Serif", Font.PLAIN, 15));
         searchBar.setForeground(new Color(30, 41, 59));
         searchBar.setAlignmentX(Component.LEFT_ALIGNMENT);
+        searchBar.getDocument().addDocumentListener(new FindEntry());
         
         searchBarHolder.add(search);
         searchBarHolder.add(searchBar);
@@ -57,8 +62,11 @@ public class SourceListPanel extends RoundedPanel {
             }
         };
         
+        vaultSorter = new TableRowSorter<DefaultTableModel>(passwordsModel);
+        
         passwordVault = new JTable(passwordsModel);
         passwordVault.getSelectionModel().addListSelectionListener(new SelectedRow());
+        passwordVault.setRowSorter(vaultSorter);
         passwordVault.setShowGrid(true);
         passwordVault.setShowVerticalLines(false);
         passwordVault.setGridColor(new Color(226, 232, 240));
@@ -82,8 +90,8 @@ public class SourceListPanel extends RoundedPanel {
             private boolean isRowSelected;
             private char[] cellVal;
             
-            public Component getTableCellRendererComponent(JTable table,
-                Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
                 
                 isRowSelected = isSelected;
                 
@@ -189,6 +197,65 @@ public class SourceListPanel extends RoundedPanel {
             if(!evt.getValueIsAdjusting()) {
                 showEntry();
             }
+        }
+    }
+    
+    class FindEntry implements DocumentListener {
+        public void insertUpdate(DocumentEvent evt) {
+            applyFilter();
+        }
+        
+        public void removeUpdate(DocumentEvent evt) {
+            applyFilter();
+        }
+        
+        public void changedUpdate(DocumentEvent evt) {
+            applyFilter();
+        }
+        
+        public void applyFilter() {
+            char[] query = searchBar.getPassword();
+            
+            if(detailVw.isOnlySpace(query)) {
+                vaultSorter.setRowFilter(null);
+                return;
+            }
+            
+            vaultSorter.setRowFilter(new RowFilter<DefaultTableModel, Integer>() {
+                public boolean include(Entry<? extends DefaultTableModel, ?
+                    extends Integer> entry) {
+                    
+                    int currRow = entry.getIdentifier();
+                    char[] site = ((char[])(passwordsModel.getValueAt(currRow, 0))).clone();
+                    
+                    if(site.length < query.length) {
+                        Arrays.fill(site, '\0');
+                        return false;
+                    }
+                    
+                    for(int i = 0; i <= site.length - query.length; i++) {
+                        int j = 0;
+                        for(j = 0; j < query.length; j++) {
+                            char siteChar = Character.toLowerCase(site[i + j]);
+                            char queryChar = Character.toLowerCase(query[j]);
+                            
+                            if(siteChar != queryChar) {
+                                break;
+                            }
+                        }
+                        
+                        if(j == query.length) {
+                            Arrays.fill(site, '\0');
+                            return true;
+                        }
+                    }
+                    
+                    Arrays.fill(site, '\0');
+                    return false;
+                }
+            });
+            
+            Arrays.fill(query, '\0');
         }
     }
     

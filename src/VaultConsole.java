@@ -3,7 +3,7 @@ import java.awt.*;
 
 public class VaultConsole extends JPanel {
     
-    public VaultConsole() {
+    public VaultConsole(Vault passVault) {
         setBackground(new Color(15, 23, 42));
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -22,7 +22,6 @@ public class VaultConsole extends JPanel {
         
         titleHolder.add(title);
         
-        Vault passVault = new Vault();
         SourceListPanel slp = new SourceListPanel();
         DetailViewPanel dvp = new DetailViewPanel();
         

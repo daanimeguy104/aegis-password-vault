@@ -45,6 +45,7 @@
             
             siteTF = new SecurePasswordField();
             siteTF.setEchoChar((char)(0));
+            siteTF.putClientProperty("JPasswordField.cutCopyAllowed", true);
             siteTF.setFont(new Font("Sans Serif", Font.PLAIN, 17));
             siteTF.setForeground(new Color(30, 41, 59));
             siteTF.setMaximumSize(new Dimension(440, 35));
@@ -58,6 +59,7 @@
             
             userTF = new SecurePasswordField();
             userTF.setEchoChar((char)(0));
+            userTF.putClientProperty("JPasswordField.cutCopyAllowed", true);
             userTF.setFont(new Font("Sans Serif", Font.PLAIN, 17));
             userTF.setForeground(new Color(30, 41, 59));
             userTF.setMaximumSize(new Dimension(440, 35));
@@ -70,7 +72,7 @@
             passLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
             
             passTF = new SecurePasswordField();
-            passTF.setEchoChar('✲');
+            passTF.setEchoChar('•');
             passTF.setFont(new Font("Sans Serif", Font.PLAIN, 17));
             passTF.setForeground(new Color(30, 41, 59));
             passTF.setMaximumSize(new Dimension(440, 35));
@@ -89,6 +91,7 @@
             
             urlTF = new SecurePasswordField();
             urlTF.setEchoChar((char)(0));
+            urlTF.putClientProperty("JPasswordField.cutCopyAllowed", true);
             urlTF.setFont(new Font("Sans Serif", Font.PLAIN, 17));
             urlTF.setForeground(new Color(30, 41, 59));
             urlTF.setMaximumSize(new Dimension(440, 35));
@@ -137,6 +140,7 @@
             delete.setForeground(Color.WHITE);
             delete.setFont(new Font("Sans Serif", Font.BOLD, 14));
             delete.setPreferredSize(new Dimension(200, 35));
+            delete.addActionListener(new RemoveEntry());
             
             viewMode.add(edit);
             viewMode.add(delete);
@@ -195,7 +199,7 @@
                 
                 if(currRow == -1) {
                     JOptionPane.showMessageDialog(DetailViewPanel.this,
-                        "Please select a row.", "No Row Selected",
+                        "Please select an entry to edit.", "No Row Selected",
                         JOptionPane.PLAIN_MESSAGE, null);
                     return;
                 }
@@ -237,11 +241,14 @@
                     passModel.addRow(new Object[]{site.clone(), username.clone()});
                 } else if(currState == State.EDIT) {
                     int currRow = sourceLst.getPasswordTable().getSelectedRow();
-                    passVault.updateEntry(currRow, site, username, password, url);
-                    
-                    DefaultTableModel passModel = sourceLst.getTableModel();
-                    passModel.setValueAt(site.clone(), currRow, 0);
-                    passModel.setValueAt(username.clone(), currRow, 1);
+                    if(currRow != -1) {
+                        currRow = sourceLst.getPasswordTable().convertRowIndexToModel(currRow);
+                        passVault.updateEntry(currRow, site, username, password, url);
+                        
+                        DefaultTableModel passModel = sourceLst.getTableModel();
+                        passModel.setValueAt(site.clone(), currRow, 0);
+                        passModel.setValueAt(username.clone(), currRow, 1);
+                    }
                 }
                 
                 Arrays.fill(site, '\0');
@@ -256,12 +263,32 @@
             }
         }
         
+        class RemoveEntry implements ActionListener {
+            public void actionPerformed(ActionEvent evt) {
+                int currRow = sourceLst.getPasswordTable().getSelectedRow();
+                
+                if(currRow == -1) {
+                    JOptionPane.showMessageDialog(DetailViewPanel.this,
+                        "Please select an entry to delete.", "No Row Selected",
+                        JOptionPane.PLAIN_MESSAGE, null);
+                    return;
+                }
+                
+                currRow = sourceLst.getPasswordTable().convertRowIndexToModel(currRow);
+                passVault.removeEntry(currRow);
+                sourceLst.getTableModel().removeRow(currRow);
+                clear();
+            }
+        }
+        
         class ShowPassword implements ActionListener {
             public void actionPerformed(ActionEvent evt) {
                 if(showPassCB.isSelected()) {
                     passTF.setEchoChar((char)(0));
+                    passTF.putClientProperty("JPasswordField.cutCopyAllowed", true);
                 } else {
-                    passTF.setEchoChar('✲');
+                    passTF.setEchoChar('•');
+                    passTF.putClientProperty("JPasswordField.cutCopyAllowed", false);
                 }
             }
         }
@@ -303,7 +330,7 @@
         }
         
         public boolean isOnlySpace(char[] toCheck) {
-            if(toCheck.length == 0 || toCheck == null) {
+            if(toCheck == null || toCheck.length == 0) {
                 return true;
             }
             

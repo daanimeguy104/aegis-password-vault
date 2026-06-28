@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class Vault {
 
@@ -27,13 +26,17 @@ public class Vault {
         return vaultEntries.get(index);
     }
     
-    public void wipeVault() {
+    public void delete() {
         for(int i = 0; i < vaultEntries.size(); i++) {
             vaultEntries.get(i).wipe();
         }
     }
     
-    public String toString() {
-        return vaultEntries.toString();
+    public int numEntries() {
+        return vaultEntries.size();
     }
+    
+    /* public String toString() {
+        return vaultEntries.toString();
+    } */
 }

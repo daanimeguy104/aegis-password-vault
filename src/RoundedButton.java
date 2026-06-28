@@ -5,6 +5,14 @@ public class RoundedButton extends JButton {
     
     private int cornerRadius;
     
+    public RoundedButton() {
+        this("", 15);
+    }
+    
+    public RoundedButton(int cornerRadius) {
+        this("", cornerRadius);
+    }
+    
     public RoundedButton(String text) {
        this(text, 15);
     }
