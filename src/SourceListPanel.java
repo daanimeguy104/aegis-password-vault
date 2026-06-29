@@ -173,6 +173,13 @@ public class SourceListPanel extends RoundedPanel {
     public void setFields(DetailViewPanel dvp, Vault vaultIn) {
         detailVw = dvp;
         passVault = vaultIn;
+        
+        for(int i = 0; i < passVault.numEntries(); i++) {
+            VaultEntry currEntry = passVault.getEntry(i);
+            
+            passwordsModel.addRow(new Object[]{currEntry.getSite().clone(),
+                currEntry.getUsername().clone()});
+        }
     }
     
     class AddMode implements ActionListener {

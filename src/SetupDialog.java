@@ -1,7 +1,9 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.File;
+import java.io.*;
+import java.nio.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class SetupDialog extends JDialog {
@@ -138,9 +140,29 @@ public class SetupDialog extends JDialog {
                 
                 Arrays.fill(password, '\0');
                 Arrays.fill(confirmPassword, '\0');
+            } else {
+                char[] password = passField.getPassword();
+                if(isOnlyWhitespace(password)) {
+                    JOptionPane.showMessageDialog(SetupDialog.this,
+                        "No password entered", "Missing Input",
+                        JOptionPane.PLAIN_MESSAGE, null);
+                }
                 
-                dispose();
+                char[] filePass = getMasterFromEnc();
+                if(!Arrays.equals(filePass, password)) {
+                    JOptionPane.showMessageDialog(SetupDialog.this,
+                        "Wrong master password.", "Wrong Password",
+                        JOptionPane.PLAIN_MESSAGE, null);
+                    Arrays.fill(filePass, '\0');
+                    return;
+                }
+                
+                masterPass = filePass.clone();
+                
+                Arrays.fill(password, '\0');
             }
+            
+            dispose();
         }
     }
     
@@ -160,6 +182,36 @@ public class SetupDialog extends JDialog {
                 passField.putClientProperty("JPasswordField.cutCopyAllowed", false);
             }
         }
+    }
+    
+    public char[] getMasterFromEnc() {
+        DataInputStream reader = null;
+        
+        try {
+            reader = new DataInputStream(new FileInputStream("vault.txt.enc"));
+        } catch(FileNotFoundException e) {
+            JOptionPane.showMessageDialog(null, "Cannot find" +
+                " \"vault.txt.enc\" to read from.", "File Access Error",
+                JOptionPane.PLAIN_MESSAGE, null);
+            return null;
+        }
+        
+        char[] filePass = null;
+        try {
+            byte[] bytes = new byte[reader.readInt()];
+            reader.readFully(bytes);
+            
+            CharBuffer passChars = StandardCharsets.UTF_8.decode(ByteBuffer.wrap(bytes));
+            filePass = new char[passChars.remaining()];
+            passChars.get(filePass);
+            Arrays.fill(bytes, (byte)(0));
+            reader.close();
+            
+        } catch(IOException e) {
+        
+        }
+        
+        return filePass;
     }
     
     public boolean isOnlyWhitespace(char[] toCheck) {

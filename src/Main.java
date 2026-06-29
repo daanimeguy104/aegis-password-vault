@@ -1,7 +1,7 @@
 import javax.swing.*;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
+import java.nio.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class Main {
@@ -27,6 +27,8 @@ public class Main {
     }
     
     public void run() {
+        File vaultFile = new File("vault.txt.enc");
+        
         JFrame frame = new JFrame();
         frame.setSize(900, 600);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -35,6 +37,9 @@ public class Main {
         if(masterPassword == null || masterPassword.length == 0) {
             System.exit(5);
         }
+        if(vaultFile.exists()) {
+            readEnc();
+        }
         
         frame.add(new VaultConsole(passVault));
         frame.setResizable(false);
@@ -42,57 +47,82 @@ public class Main {
         frame.setVisible(true);
     }
     
-    public void writeEnc() {
-        PrintWriter output = null;
+    public void readEnc()  {
+        DataInputStream reader = null;
         
         try {
-            output = new PrintWriter("vault.txt.enc");
-        } catch(IOException e) {
-            JOptionPane.showMessageDialog(null, "Cannot create" +
-                "\"vault.enc\" for writing to.", "File Creation Error",
+            reader = new DataInputStream(new FileInputStream("vault.txt.enc"));
+        } catch(FileNotFoundException e) {
+            JOptionPane.showMessageDialog(null, "Cannot find" +
+                " \"vault.txt.enc\" to read from.", "File Access Error",
                 JOptionPane.PLAIN_MESSAGE, null);
             return;
         }
         
-        writeArray(output, masterPassword);
-        output.println('\n');
-        
-        output.println('[');
-        for(int i = 0; i < passVault.numEntries(); i++) {
-            VaultEntry currEntry = passVault.getEntry(i);
+        try {
+            masterPassword = readArray(reader);
             
-            
-            output.println("    {");
-            output.print("        \"siteName\": ");
-            writeArray(output, currEntry.getSite());
-            output.println(',');
-            
-            output.print("        \"username\": ");
-            writeArray(output, currEntry.getUsername());
-            output.println(',');
-            
-            output.print("        \"password\": ");
-            writeArray(output, currEntry.getPassword());
-            output.println(',');
-            
-            output.print("        \"url\": ");
-            writeArray(output, currEntry.getUrl());
-            output.println();
-            
-            output.print("    }");
-            
-            if(i != passVault.numEntries() - 1) {
-                output.println(',');
+            int numEntries = reader.readInt();
+            for(int i = 0; i < numEntries; i++) {
+                passVault.addEntry(readArray(reader), readArray(reader),
+                    readArray(reader), readArray(reader));
             }
-        }
-        output.println("\n]");
-        output.close();
-    }
-    
-    public void writeArray(PrintWriter pw, char[] toWrite) {
-        for(int i = 0; i < toWrite.length; i++) {
-            pw.print(toWrite[i]);
+            reader.close();
+        } catch(IOException e) {
+        
         }
     }
     
+    public char[] readArray(DataInputStream reader) throws IOException {
+        byte[] bytes = new byte[reader.readInt()];
+        reader.readFully(bytes);
+        
+        CharBuffer chars = StandardCharsets.UTF_8.decode(ByteBuffer.wrap(bytes));
+        char[] data = new char[chars.remaining()];
+        chars.get(data);
+        Arrays.fill(bytes, (byte)(0));
+        
+        return data;
+    }
+    
+    public void writeEnc() {
+        DataOutputStream writer = null;
+        
+        try {
+            writer = new DataOutputStream(new FileOutputStream(("vault.txt.enc")));
+        } catch(FileNotFoundException e) {
+            JOptionPane.showMessageDialog(null, "Cannot create" +
+                    " \"vault.txt.enc\" to write to.", "File Creation Error",
+                JOptionPane.PLAIN_MESSAGE, null);
+            return;
+        }
+        
+        try {
+            writeArray(writer, masterPassword);
+            writer.writeInt(passVault.numEntries());
+            
+            for(int i = 0; i < passVault.numEntries(); i++) {
+                VaultEntry currEntry = passVault.getEntry(i);
+                
+                writeArray(writer, currEntry.getSite());
+                writeArray(writer, currEntry.getUsername());
+                writeArray(writer, currEntry.getPassword());
+                writeArray(writer, currEntry.getUrl());
+            }
+            writer.close();
+        } catch(IOException e) {
+        
+        }
+    }
+    
+    public void writeArray(DataOutputStream writer, char[] array) throws IOException {
+        ByteBuffer bytes = StandardCharsets.UTF_8.encode(CharBuffer.wrap(array));
+        byte[] rawData = new byte[bytes.remaining()];
+        bytes.get(rawData);
+        
+        writer.writeInt(rawData.length);
+        writer.write(rawData);
+        
+        Arrays.fill(rawData, (byte)(0));
+    }
 }
