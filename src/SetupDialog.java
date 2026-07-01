@@ -105,7 +105,7 @@ public class SetupDialog extends JDialog {
     }
     
     public static char[] showGateway(JFrame parent) {
-        File vaultFile = new File("vault.txt.enc");
+        File vaultFile = new File("vault.enc");
         
         SetupDialog setup = new SetupDialog(parent, !vaultFile.exists());
         setup.setVisible(true);
@@ -126,6 +126,8 @@ public class SetupDialog extends JDialog {
                     JOptionPane.showMessageDialog(SetupDialog.this, "One" +
                         " or more input fields are empty.", "Missing Input",
                         JOptionPane.PLAIN_MESSAGE, null);
+                    Arrays.fill(password, '\0');
+                    Arrays.fill(confirmPassword, '\0');
                     return;
                 }
                 
@@ -133,6 +135,8 @@ public class SetupDialog extends JDialog {
                     JOptionPane.showMessageDialog(SetupDialog.this,
                         "Passwords don't match", "Invalid Input",
                         JOptionPane.PLAIN_MESSAGE, null);
+                    Arrays.fill(password, '\0');
+                    Arrays.fill(confirmPassword, '\0');
                     return;
                 }
                 
@@ -146,6 +150,7 @@ public class SetupDialog extends JDialog {
                     JOptionPane.showMessageDialog(SetupDialog.this,
                         "No password entered", "Missing Input",
                         JOptionPane.PLAIN_MESSAGE, null);
+                    Arrays.fill(password, '\0');
                 }
                 
                 char[] filePass = getMasterFromEnc();
@@ -154,12 +159,14 @@ public class SetupDialog extends JDialog {
                         "Wrong master password.", "Wrong Password",
                         JOptionPane.PLAIN_MESSAGE, null);
                     Arrays.fill(filePass, '\0');
+                    Arrays.fill(password, '\0');
                     return;
                 }
                 
                 masterPass = filePass.clone();
                 
                 Arrays.fill(password, '\0');
+                Arrays.fill(filePass, '\0');
             }
             
             dispose();
@@ -179,25 +186,15 @@ public class SetupDialog extends JDialog {
                 confirmPass.setEchoChar('•');
                 
                 passField.putClientProperty("JPasswordField.cutCopyAllowed", false);
-                passField.putClientProperty("JPasswordField.cutCopyAllowed", false);
+                confirmPass.putClientProperty("JPasswordField.cutCopyAllowed", false);
             }
         }
     }
     
     public char[] getMasterFromEnc() {
-        DataInputStream reader = null;
-        
-        try {
-            reader = new DataInputStream(new FileInputStream("vault.txt.enc"));
-        } catch(FileNotFoundException e) {
-            JOptionPane.showMessageDialog(null, "Cannot find" +
-                " \"vault.txt.enc\" to read from.", "File Access Error",
-                JOptionPane.PLAIN_MESSAGE, null);
-            return null;
-        }
-        
-        char[] filePass = null;
-        try {
+        try(DataInputStream reader = new DataInputStream(new FileInputStream("vault.enc"))) {
+            
+            char[] filePass = null;
             byte[] bytes = new byte[reader.readInt()];
             reader.readFully(bytes);
             
@@ -207,11 +204,13 @@ public class SetupDialog extends JDialog {
             Arrays.fill(bytes, (byte)(0));
             reader.close();
             
+            return filePass;
         } catch(IOException e) {
-        
+            JOptionPane.showMessageDialog(null, "Cannot safely " +
+                "read from \"vault.enc\".", "File Access Error",
+                JOptionPane.PLAIN_MESSAGE, null);
+            return null;
         }
-        
-        return filePass;
     }
     
     public boolean isOnlyWhitespace(char[] toCheck) {

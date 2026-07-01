@@ -1,4 +1,6 @@
 import javax.swing.*;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.*;
 import java.nio.*;
 import java.nio.charset.StandardCharsets;
@@ -27,11 +29,12 @@ public class Main {
     }
     
     public void run() {
-        File vaultFile = new File("vault.txt.enc");
+        File vaultFile = new File("vault.enc");
         
         JFrame frame = new JFrame();
         frame.setSize(900, 600);
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        frame.addWindowListener(new OnWindowClose());
         
         masterPassword = SetupDialog.showGateway(frame);
         if(masterPassword == null || masterPassword.length == 0) {
@@ -47,19 +50,21 @@ public class Main {
         frame.setVisible(true);
     }
     
-    public void readEnc()  {
-        DataInputStream reader = null;
-        
-        try {
-            reader = new DataInputStream(new FileInputStream("vault.txt.enc"));
-        } catch(FileNotFoundException e) {
-            JOptionPane.showMessageDialog(null, "Cannot find" +
-                " \"vault.txt.enc\" to read from.", "File Access Error",
-                JOptionPane.PLAIN_MESSAGE, null);
-            return;
+    class OnWindowClose implements WindowListener {
+        public void windowClosing(WindowEvent evt) {
+            System.exit(0);
         }
         
-        try {
+        public void windowOpened(WindowEvent evt) {}
+        public void windowClosed(WindowEvent evt) {}
+        public void windowIconified(WindowEvent evt) {}
+        public void windowDeiconified(WindowEvent evt) {}
+        public void windowActivated(WindowEvent evt) {}
+        public void windowDeactivated(WindowEvent evt) {}
+    }
+    
+    public void readEnc()  {
+        try(DataInputStream reader = new DataInputStream(new FileInputStream("vault.enc"))) {
             masterPassword = readArray(reader);
             
             int numEntries = reader.readInt();
@@ -67,9 +72,10 @@ public class Main {
                 passVault.addEntry(readArray(reader), readArray(reader),
                     readArray(reader), readArray(reader));
             }
-            reader.close();
         } catch(IOException e) {
-        
+            JOptionPane.showMessageDialog(null, "Cannot safely " +
+                "read from \"vault.enc\".", "File Access Error",
+                JOptionPane.PLAIN_MESSAGE, null);
         }
     }
     
@@ -86,18 +92,7 @@ public class Main {
     }
     
     public void writeEnc() {
-        DataOutputStream writer = null;
-        
-        try {
-            writer = new DataOutputStream(new FileOutputStream(("vault.txt.enc")));
-        } catch(FileNotFoundException e) {
-            JOptionPane.showMessageDialog(null, "Cannot create" +
-                    " \"vault.txt.enc\" to write to.", "File Creation Error",
-                JOptionPane.PLAIN_MESSAGE, null);
-            return;
-        }
-        
-        try {
+        try(DataOutputStream writer = new DataOutputStream(new FileOutputStream("vault.enc"))){
             writeArray(writer, masterPassword);
             writer.writeInt(passVault.numEntries());
             
@@ -109,9 +104,10 @@ public class Main {
                 writeArray(writer, currEntry.getPassword());
                 writeArray(writer, currEntry.getUrl());
             }
-            writer.close();
         } catch(IOException e) {
-        
+            JOptionPane.showMessageDialog(null, "Cannot" +
+                " safely write to \"vault.enc\".","File Creation Error",
+                JOptionPane.PLAIN_MESSAGE, null);
         }
     }
     
